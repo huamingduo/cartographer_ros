@@ -48,6 +48,9 @@
 #include "tf2_eigen/tf2_eigen.h"
 #include "visualization_msgs/MarkerArray.h"
 
+#include "tf2_ros/transform_listener.h"
+#include "geometry_msgs/TransformStamped.h"
+
 namespace cartographer_ros {
 
 namespace carto = ::cartographer;
@@ -391,6 +394,9 @@ Node::ComputeExpectedSensorIds(const TrajectoryOptions& options) const {
   if (options.use_landmarks) {
     expected_topics.insert(SensorId{SensorType::LANDMARK, kLandmarkTopic});
   }
+  if (options.use_apriltag) {
+    expected_topics.insert(SensorId{SensorType::LANDMARK, "/tag_detections"});
+  }
   return expected_topics;
 }
 
@@ -471,6 +477,14 @@ void Node::LaunchSubscribers(const TrajectoryOptions& options,
              &Node::HandleLandmarkMessage, trajectory_id, kLandmarkTopic,
              &node_handle_, this),
          kLandmarkTopic});
+  }
+  if (options.use_apriltag) {
+    std::string topic{"/tag_detections"};
+    subscribers_[trajectory_id].push_back(
+        {SubscribeWithHandler<apriltag_ros::AprilTagDetectionArray>(
+             &Node::HandleApriltagMessage, trajectory_id, topic,
+             &node_handle_, this),
+        topic)});
   }
 }
 
@@ -798,6 +812,49 @@ void Node::HandleLandmarkMessage(
   map_builder_bridge_.sensor_bridge(trajectory_id)
       ->HandleLandmarkMessage(sensor_id, msg);
 }
+
+void Node::HandleApriltagMessage(const int trajectory_id, const std::string& sensor_id,
+    const apriltag_ros::AprilTagDetectionArray::ConstPtr& msg) {
+  carto::common::MutexLocker lock(&mutex_);
+  if (!sensor_samplers_.at(trajectory_id).landmark_sampler.Pulse()) {
+    return;
+  }
+  cartographer_ros_msgs::LandmarkList landmark_msg;
+  landmark_msg.header = msg->header;
+  // landmark_msg.header.frame_id = "tag_19";
+
+  if (!msg->detections.empty()) {
+    tf2_ros::Buffer buffer;
+    tf2_ros::TransformListener listener(buffer);
+    geometry_msgs::TransformStamped base_camera_transform;
+
+    try {
+      base_camera_transform = buffer.lookupTransform("base_link", "tag_19",
+        ros::Time(0), ros::Duration(0.05));
+    } catch (tf2::TransformException& e) {
+      ROS_WARN("%s", e.what());
+      return;
+    }
+
+    cartographer_ros_msgs::LandmarkEntry landmark_entry;
+    landmark_entry.id = std::to_string(msg->detections[0].id[0]);
+    landmark_entry.tracking_from_landmark_transform.orientation =
+      base_camera_transform.transform.rotation;
+    landmark_entry.tracking_from_landmark_transform.position.x =
+      base_camera_transform.transform.translation.x;
+    landmark_entry.tracking_from_landmark_transform.position.y =
+      base_camera_transform.transform.translation.y;
+    landmark_entry.tracking_from_landmark_transform.position.z =
+      base_camera_transform.transform.translation.z;
+    landmark_entry.translation_weight = 1e4;
+    landmark_entry.rotation_weight = 1e4;
+    landmark_msg.landmark.push_back(landmark_entry);
+  }
+
+  map_builder_bridge_.sensor_bridge(trajectory_id)->HandleLandmarkMessage(sensor_id,
+    boost::make_shared<cartographer_ros_msgs::LandmarkList>(landmark_msg));
+}
+
 
 void Node::HandleImuMessage(const int trajectory_id,
                             const std::string& sensor_id,

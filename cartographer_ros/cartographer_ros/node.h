@@ -51,6 +51,8 @@
 #include "sensor_msgs/PointCloud2.h"
 #include "tf2_ros/transform_broadcaster.h"
 
+#include "apriltag_ros/AprilTagDetectionArray.h"
+
 namespace cartographer_ros {
 
 // Wires up ROS topics to SLAM.
@@ -99,6 +101,8 @@ class Node {
   void HandleLandmarkMessage(
       int trajectory_id, const std::string& sensor_id,
       const cartographer_ros_msgs::LandmarkList::ConstPtr& msg);
+  void HandleApriltagMessage(int trajectory_id, const std::string& sensor_id,
+      const apriltag_ros::AprilTagDetectionArray::ConstPrt& msg);
   void HandleImuMessage(int trajectory_id, const std::string& sensor_id,
                         const sensor_msgs::Imu::ConstPtr& msg);
   void HandleLaserScanMessage(int trajectory_id, const std::string& sensor_id,

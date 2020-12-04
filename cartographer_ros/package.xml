@@ -63,6 +63,8 @@
   <depend>urdf</depend>
   <depend>visualization_msgs</depend>
 
+  <depend>apriltag_ros</depend>
+
   <test_depend>rosunit</test_depend>
 
   <export>

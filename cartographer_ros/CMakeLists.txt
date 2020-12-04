@@ -32,6 +32,7 @@ set(PACKAGE_DEPENDENCIES
   tf2_ros
   urdf
   visualization_msgs
+  apriltag_ros
 )
 
 if(WIN32)
