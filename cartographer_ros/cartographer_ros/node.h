@@ -102,7 +102,7 @@ class Node {
       int trajectory_id, const std::string& sensor_id,
       const cartographer_ros_msgs::LandmarkList::ConstPtr& msg);
   void HandleApriltagMessage(int trajectory_id, const std::string& sensor_id,
-      const apriltag_ros::AprilTagDetectionArray::ConstPrt& msg);
+      const apriltag_ros::AprilTagDetectionArray::ConstPtr& msg);
   void HandleImuMessage(int trajectory_id, const std::string& sensor_id,
                         const sensor_msgs::Imu::ConstPtr& msg);
   void HandleLaserScanMessage(int trajectory_id, const std::string& sensor_id,

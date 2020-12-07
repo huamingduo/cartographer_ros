@@ -484,7 +484,7 @@ void Node::LaunchSubscribers(const TrajectoryOptions& options,
         {SubscribeWithHandler<apriltag_ros::AprilTagDetectionArray>(
              &Node::HandleApriltagMessage, trajectory_id, topic,
              &node_handle_, this),
-        topic)});
+        topic});
   }
 }
 
@@ -815,7 +815,7 @@ void Node::HandleLandmarkMessage(
 
 void Node::HandleApriltagMessage(const int trajectory_id, const std::string& sensor_id,
     const apriltag_ros::AprilTagDetectionArray::ConstPtr& msg) {
-  carto::common::MutexLocker lock(&mutex_);
+  absl::MutexLock lock(&mutex_);
   if (!sensor_samplers_.at(trajectory_id).landmark_sampler.Pulse()) {
     return;
   }
@@ -848,7 +848,7 @@ void Node::HandleApriltagMessage(const int trajectory_id, const std::string& sen
       base_camera_transform.transform.translation.z;
     landmark_entry.translation_weight = 1e4;
     landmark_entry.rotation_weight = 1e4;
-    landmark_msg.landmark.push_back(landmark_entry);
+    landmark_msg.landmarks.push_back(landmark_entry);
   }
 
   map_builder_bridge_.sensor_bridge(trajectory_id)->HandleLandmarkMessage(sensor_id,
