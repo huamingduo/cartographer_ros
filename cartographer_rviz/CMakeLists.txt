@@ -36,6 +36,7 @@ google_initialize_cartographer_project()
 find_package(absl REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS ${PACKAGE_DEPENDENCIES})
+find_package(VTK REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
