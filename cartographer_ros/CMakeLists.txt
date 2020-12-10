@@ -59,6 +59,7 @@ include(FindPkgConfig)
 find_package(absl REQUIRED)
 find_package(LuaGoogle REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(VTK REQUIRED)
 
 find_package(urdfdom_headers REQUIRED)
 if(DEFINED urdfdom_headers_VERSION)
