@@ -1,4 +1,4 @@
--- Copyright 2017 The Cartographer Authors
+-- Copyright 2016 The Cartographer Authors
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,17 +12,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-XY_TRANSFORM =  {
-  translation = { 0., 0., 0. },
-  rotation = { 0., -math.pi / 2., 0., },
-}
+include "pose_graph.lua"
 
-XZ_TRANSFORM =  {
-  translation = { 0., 0., 0. },
-  rotation = { 0. , 0., -math.pi / 2, },
-}
-
-YZ_TRANSFORM =  {
-  translation = { 0., 0., 0. },
-  rotation = { 0. , 0., math.pi, },
+MAP_BUILDER = {
+  use_trajectory_builder_2d = false,
+  use_trajectory_builder_3d = false,
+  num_background_threads = 4,
+  pose_graph = POSE_GRAPH,
+  collate_by_trajectory = false,
 }

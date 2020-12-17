@@ -12,16 +12,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-include "backpack_2d_localization.lua"
+include "trajectory_builder_2d.lua"
+include "trajectory_builder_3d.lua"
 
--- output map to base_link for evaluation
-options.provide_odom_frame = false
-POSE_GRAPH.optimization_problem.log_solver_summary = true
-
--- fast localization
-MAP_BUILDER.num_background_threads = 12
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.5 * POSE_GRAPH.constraint_builder.sampling_ratio
-POSE_GRAPH.global_sampling_ratio = 0.1 * POSE_GRAPH.global_sampling_ratio
-POSE_GRAPH.max_num_final_iterations = 1
-
-return options
+TRAJECTORY_BUILDER = {
+  trajectory_builder_2d = TRAJECTORY_BUILDER_2D,
+  trajectory_builder_3d = TRAJECTORY_BUILDER_3D,
+--  pure_localization_trimmer = {
+--    max_submaps_to_keep = 3,
+--  },
+  collate_fixed_frame = true,
+  collate_landmarks = false,
+}
