@@ -64,6 +64,7 @@
   <depend>visualization_msgs</depend>
 
   <depend>apriltag_ros</depend>
+	<depend>common_pkg</depend>
 
   <test_depend>rosunit</test_depend>
 

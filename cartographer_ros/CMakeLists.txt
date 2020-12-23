@@ -33,6 +33,7 @@ set(PACKAGE_DEPENDENCIES
   urdf
   visualization_msgs
   apriltag_ros
+	common_pkg
 )
 
 if(WIN32)

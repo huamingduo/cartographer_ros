@@ -136,6 +136,10 @@ Node::Node(
       kGetTrajectoryStatesServiceName, &Node::HandleGetTrajectoryStates, this));
   service_servers_.push_back(node_handle_.advertiseService(
       kReadMetricsServiceName, &Node::HandleReadMetrics, this));
+  service_servers_.push_back(node_handle_.advertiseService(
+      "/load_map", &Node::HandleLoadState, this));
+  service_servers_.push_back(node_handle_.advertiseService(
+      "/save_map", &Node::HandleSaveState, this));
 
   scan_matched_point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(
@@ -739,6 +743,51 @@ bool Node::HandleReadMetrics(
   return true;
 }
 
+bool Node::HandleLoadState(
+    common_pkg::map_srv::Request& request,
+    common_pkg::map_srv::Response& response) {
+  std::string state_filename{request.path_name + request.map_name + ".pbstream"};
+  std::ifstream pbstream_file{state_filename};
+  if (!pbstream_file) {
+    ROS_WARN("The pbstream file does not exist");
+    response.success = false;
+    response.message = "The pbstream file does not exist";
+    return false;
+  }
+  try {
+    LoadState(state_filename, true);
+  } catch (const std::exception& e) {
+    ROS_WARN("%s", e.what());
+    response.success = false;
+    response.message = "Error occured when loading map";
+    return false;
+  }
+  response.success = true;
+  response.message = request.map_name + " loaded";
+  return true;
+}
+
+bool Node::HandleSaveState(
+    common_pkg::map_srv::Request& request,
+    common_pkg::map_srv::Response& response) {
+  cartographer_ros_msgs::WriteState::Request req;
+  cartographer_ros_msgs::WriteState::Response res;
+  req.filename = request.path_name + request.map_name + ".pbstream";
+  req.include_unfinished_submaps = false;
+  absl::MutexLock lock(&mutex_);
+  if (map_builder_bridge_.SerializeState(req.filename,
+                                         req.include_unfinished_submaps)) {
+    res.status.code = cartographer_ros_msgs::StatusCode::OK;
+    res.status.message =
+        absl::StrCat("State written to '", req.filename, "'.");
+  } else {
+    res.status.code = cartographer_ros_msgs::StatusCode::INVALID_ARGUMENT;
+    res.status.message =
+        absl::StrCat("Failed to write '", req.filename, "'.");
+  }
+  return true;
+}
+
 void Node::FinishAllTrajectories() {
   absl::MutexLock lock(&mutex_);
   for (const auto& entry : map_builder_bridge_.GetTrajectoryStates()) {
@@ -831,7 +880,7 @@ void Node::HandleApriltagMessage(const int trajectory_id, const std::string& sen
     try {
       base_camera_transform = buffer.lookupTransform("base_link", "tag_19",
         ros::Time(0), ros::Duration(0.05));
-    } catch (tf2::TransformException& e) {
+    } catch (const tf2::TransformException& e) {
       ROS_WARN("%s", e.what());
       return;
     }

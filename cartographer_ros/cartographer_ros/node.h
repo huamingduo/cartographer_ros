@@ -52,6 +52,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 
 #include "apriltag_ros/AprilTagDetectionArray.h"
+#include "common_pkg/map_srv.h"
 
 namespace cartographer_ros {
 
@@ -153,6 +154,12 @@ class Node {
   bool HandleReadMetrics(
       cartographer_ros_msgs::ReadMetrics::Request& request,
       cartographer_ros_msgs::ReadMetrics::Response& response);
+  bool HandleLoadState(
+      common_pkg::map_srv::Request& request,
+      common_pkg::map_srv::Response& response);
+  bool HandleSaveState(
+      common_pkg::map_srv::Request& request,
+      common_pkg::map_srv::Response& response);
 
   // Returns the set of SensorIds expected for a trajectory.
   // 'SensorId::id' is the expected ROS topic name.
