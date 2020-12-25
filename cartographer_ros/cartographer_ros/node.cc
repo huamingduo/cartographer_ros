@@ -139,7 +139,7 @@ Node::Node(
   service_servers_.push_back(node_handle_.advertiseService(
       "/load_map", &Node::HandleLoadState, this));
   service_servers_.push_back(node_handle_.advertiseService(
-      "/save_map", &Node::HandleSaveState, this));
+      "/carto/save_map", &Node::HandleSaveState, this));
 
   scan_matched_point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(
