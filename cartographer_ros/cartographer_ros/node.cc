@@ -137,7 +137,7 @@ Node::Node(
   service_servers_.push_back(node_handle_.advertiseService(
       kReadMetricsServiceName, &Node::HandleReadMetrics, this));
   service_servers_.push_back(node_handle_.advertiseService(
-      "/load_map", &Node::HandleLoadState, this));
+      "/carto/load_map", &Node::HandleLoadState, this));
   service_servers_.push_back(node_handle_.advertiseService(
       "/carto/save_map", &Node::HandleSaveState, this));
 
@@ -754,6 +754,8 @@ bool Node::HandleLoadState(
     response.message = "The pbstream file does not exist";
     return false;
   }
+  FinishAllTrajectories();
+  RunFinalOptimization();
   try {
     LoadState(state_filename, true);
   } catch (const std::exception& e) {
