@@ -51,6 +51,17 @@
 #include "tf2_ros/transform_listener.h"
 #include "geometry_msgs/TransformStamped.h"
 
+#include "cartographer/io/proto_stream.h"
+#include "cartographer/io/proto_stream_deserializer.h"
+#include "cartographer/io/submap_painter.h"
+#include "cartographer/mapping/2d/probability_grid.h"
+#include "cartographer/mapping/2d/submap_2d.h"
+#include "cartographer/mapping/3d/submap_3d.h"
+#include "cartographer_ros/ros_map.h"
+#include "gflags/gflags.h"
+
+#include <opencv2/opencv.hpp>
+
 namespace cartographer_ros {
 
 namespace carto = ::cartographer;
@@ -780,14 +791,51 @@ bool Node::HandleSaveState(
   if (map_builder_bridge_.SerializeState(req.filename,
                                          req.include_unfinished_submaps)) {
     res.status.code = cartographer_ros_msgs::StatusCode::OK;
-    res.status.message =
-        absl::StrCat("State written to '", req.filename, "'.");
+    res.status.message = absl::StrCat("State written to '", req.filename, "'.");
+    try {
+      ConvertToMap(req.filename, request.path_name + request.map_name, 0.05); // TODO: resolution as a variable
+      cv::Mat image = cv::imread(request.path_name + request.map_name + ".png");
+      return cv::imwrite(request.path_name + request.map_name + ".png", image);
+    } catch (...) {
+      ROS_ERROR("Error occurred while converting pbstream to map.");
+      return false;
+    }
   } else {
     res.status.code = cartographer_ros_msgs::StatusCode::INVALID_ARGUMENT;
     res.status.message =
         absl::StrCat("Failed to write '", req.filename, "'.");
   }
   return true;
+}
+
+void Node::ConvertToMap(const std::string& pbstream_filename, const std::string& map_filestem,
+         const double resolution) {
+  ::cartographer::io::ProtoStreamReader reader(pbstream_filename);
+  ::cartographer::io::ProtoStreamDeserializer deserializer(&reader);
+
+  LOG(INFO) << "Loading submap slices from serialized data.";
+  std::map<::cartographer::mapping::SubmapId, ::cartographer::io::SubmapSlice>
+      submap_slices;
+  ::cartographer::mapping::ValueConversionTables conversion_tables;
+  ::cartographer::io::DeserializeAndFillSubmapSlices(
+      &deserializer, &submap_slices, &conversion_tables);
+  CHECK(reader.eof());
+
+  LOG(INFO) << "Generating combined map image from submap slices.";
+  auto result =
+      ::cartographer::io::PaintSubmapSlices(submap_slices, resolution);
+
+  ::cartographer::io::StreamFileWriter pgm_writer(map_filestem + ".png");
+
+  ::cartographer::io::Image image(std::move(result.surface));
+  WritePgm(image, resolution, &pgm_writer);
+
+  const Eigen::Vector2d origin(
+      -result.origin.x() * resolution,
+      (result.origin.y() - image.height()) * resolution);
+
+  ::cartographer::io::StreamFileWriter yaml_writer(map_filestem + ".yaml");
+  WriteYaml(resolution, origin, pgm_writer.GetFilename(), &yaml_writer);
 }
 
 void Node::FinishAllTrajectories() {

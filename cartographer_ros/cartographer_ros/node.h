@@ -161,6 +161,9 @@ class Node {
       common_pkg::map_srv::Request& request,
       common_pkg::map_srv::Response& response);
 
+  void ConvertToMap(const std::string& pbstream_filename,
+      const std::string& map_filestem, const double resolution);
+
   // Returns the set of SensorIds expected for a trajectory.
   // 'SensorId::id' is the expected ROS topic name.
   std::set<::cartographer::mapping::TrajectoryBuilderInterface::SensorId>
