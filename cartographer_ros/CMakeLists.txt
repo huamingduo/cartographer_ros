@@ -45,6 +45,7 @@ endif()
 # PCL also finds Boost. Work around by moving before find_package(cartographer).
 find_package(Boost REQUIRED COMPONENTS system iostreams)
 find_package(PCL REQUIRED COMPONENTS common)
+find_package(OpenCV REQUIRED)
 
 find_package(cartographer REQUIRED)
 include("${CARTOGRAPHER_CMAKE_DIR}/functions.cmake")
@@ -123,6 +124,10 @@ foreach(DEFINITION ${PCL_DEFINITIONS})
   endif()
   set(TARGET_COMPILE_FLAGS "${TARGET_COMPILE_FLAGS} ${DEFINITION}")
 endforeach()
+
+# OpenCV
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBRARIES})
 
 # Eigen
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
